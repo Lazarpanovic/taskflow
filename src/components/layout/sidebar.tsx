@@ -1,6 +1,12 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { navigationItems } from "@/data/navigation";
 
 export function Sidebar() {
+  const pathname = usePathname();
+
   return (
     <aside className="hidden min-h-screen w-72 shrink-0 border-r border-slate-200 bg-white px-5 py-6 text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-white lg:block">
       <div>
@@ -20,19 +26,21 @@ export function Sidebar() {
         <nav className="mt-10 space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
+            const isActive = pathname === item.href;
 
             return (
-              <button
+              <Link
                 key={item.label}
+                href={item.href}
                 className={
-                  item.isActive
+                  isActive
                     ? "flex w-full items-center gap-3 rounded-2xl bg-blue-500 px-4 py-3 text-left text-sm font-medium text-white"
                     : "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
                 }
               >
                 <Icon className="size-4" />
                 {item.label}
-              </button>
+              </Link>
             );
           })}
         </nav>

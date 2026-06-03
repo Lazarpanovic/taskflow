@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -22,20 +22,31 @@ type KanbanBoardProps = {
   tasks: Task[];
   setTasks: SetTasks;
   onTaskClick: (task: Task) => void;
+  visibleStatuses?: TaskStatus[];
 };
-
-const columnIds = kanbanColumns.map((column) => column.id);
-
-function isTaskStatus(value: unknown): value is TaskStatus {
-  return typeof value === "string" && columnIds.includes(value as TaskStatus);
-}
 
 export function KanbanBoard({
   tasks,
   setTasks,
   onTaskClick,
+  visibleStatuses,
 }: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
+
+  const visibleColumns = useMemo(() => {
+    if (!visibleStatuses) {
+      return kanbanColumns;
+    }
+
+    return kanbanColumns.filter((column) =>
+      visibleStatuses.includes(column.id),
+    );
+  }, [visibleStatuses]);
+
+  const visibleColumnIds = useMemo(
+    () => visibleColumns.map((column) => column.id),
+    [visibleColumns],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -44,6 +55,13 @@ export function KanbanBoard({
       },
     }),
   );
+
+  const isVisibleTaskStatus = (value: unknown): value is TaskStatus => {
+    return (
+      typeof value === "string" &&
+      visibleColumnIds.includes(value as TaskStatus)
+    );
+  };
 
   const handleDragStart = (event: DragStartEvent) => {
     const activeTaskId = event.active.id.toString();
@@ -66,7 +84,7 @@ export function KanbanBoard({
     const activeTaskId = active.id.toString();
     const overColumnId = over.id.toString();
 
-    if (!isTaskStatus(overColumnId)) {
+    if (!isVisibleTaskStatus(overColumnId)) {
       return;
     }
 
@@ -103,7 +121,7 @@ export function KanbanBoard({
     >
       <section className="-mx-4 mt-6 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex gap-4">
-          {kanbanColumns.map((column) => {
+          {visibleColumns.map((column) => {
             const columnTasks = tasks.filter(
               (task) => task.status === column.id,
             );

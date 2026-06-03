@@ -3,22 +3,22 @@ import { BarChart3, CheckSquare, FolderKanban, Settings } from "lucide-react";
 export const navigationItems = [
   {
     label: "Board",
+    href: "/",
     icon: FolderKanban,
-    isActive: true,
   },
   {
-    label: "Tasks",
+    label: "Tickets",
+    href: "/tickets",
     icon: CheckSquare,
-    isActive: false,
   },
   {
     label: "Reports",
+    href: "#",
     icon: BarChart3,
-    isActive: false,
   },
   {
     label: "Settings",
+    href: "#",
     icon: Settings,
-    isActive: false,
   },
 ];

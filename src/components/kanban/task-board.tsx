@@ -11,6 +11,13 @@ import type { Task, TaskPriority, TaskStatus } from "@/types";
 
 const TASKS_STORAGE_KEY = "taskflow-tasks";
 
+const CURRENT_SPRINT_STATUSES: TaskStatus[] = [
+  "todo",
+  "in-progress",
+  "review",
+  "done",
+];
+
 export function TaskBoard() {
   const [tasks, setTasks, isInitialized] = useLocalStorage<Task[]>(
     TASKS_STORAGE_KEY,
@@ -31,25 +38,27 @@ export function TaskBoard() {
   const filteredTasks = useMemo(() => {
     const normalizedSearch = searchQuery.trim().toLowerCase();
 
-    return tasks.filter((task) => {
-      const matchesSearch =
-        normalizedSearch.length === 0 ||
-        task.title.toLowerCase().includes(normalizedSearch) ||
-        task.description.toLowerCase().includes(normalizedSearch) ||
-        task.assignee.name.toLowerCase().includes(normalizedSearch) ||
-        task.assignee.initials.toLowerCase().includes(normalizedSearch) ||
-        task.labels.some((label) =>
-          label.name.toLowerCase().includes(normalizedSearch),
-        );
+    return tasks
+      .filter((task) => CURRENT_SPRINT_STATUSES.includes(task.status))
+      .filter((task) => {
+        const matchesSearch =
+          normalizedSearch.length === 0 ||
+          task.title.toLowerCase().includes(normalizedSearch) ||
+          task.description.toLowerCase().includes(normalizedSearch) ||
+          task.assignee.name.toLowerCase().includes(normalizedSearch) ||
+          task.assignee.initials.toLowerCase().includes(normalizedSearch) ||
+          task.labels.some((label) =>
+            label.name.toLowerCase().includes(normalizedSearch),
+          );
 
-      const matchesPriority =
-        selectedPriority === "all" || task.priority === selectedPriority;
+        const matchesPriority =
+          selectedPriority === "all" || task.priority === selectedPriority;
 
-      const matchesStatus =
-        selectedStatus === "all" || task.status === selectedStatus;
+        const matchesStatus =
+          selectedStatus === "all" || task.status === selectedStatus;
 
-      return matchesSearch && matchesPriority && matchesStatus;
-    });
+        return matchesSearch && matchesPriority && matchesStatus;
+      });
   }, [tasks, searchQuery, selectedPriority, selectedStatus]);
 
   const openCreateTaskModal = () => {
@@ -134,12 +143,11 @@ export function TaskBoard() {
           </p>
 
           <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-            Kanban Board
+            Current Sprint Board
           </h2>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Plan, prioritize, and track your work across a clean drag-and-drop
-            workflow.
+            Track active sprint work across a focused drag-and-drop workflow.
           </p>
         </div>
 
@@ -179,6 +187,7 @@ export function TaskBoard() {
           tasks={filteredTasks}
           setTasks={setTasks}
           onTaskClick={openEditTaskModal}
+          visibleStatuses={CURRENT_SPRINT_STATUSES}
         />
       ) : (
         <div className="mt-6 flex min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/70">

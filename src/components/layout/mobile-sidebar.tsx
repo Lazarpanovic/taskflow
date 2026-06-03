@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { navigationItems } from "@/data/navigation";
 
@@ -9,6 +11,8 @@ type MobileSidebarProps = {
 };
 
 export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
+  const pathname = usePathname();
+
   if (!isOpen) {
     return null;
   }
@@ -49,20 +53,22 @@ export function MobileSidebar({ isOpen, onClose }: MobileSidebarProps) {
         <nav className="mt-10 space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
+            const isActive = pathname === item.href;
 
             return (
-              <button
+              <Link
                 key={item.label}
+                href={item.href}
                 onClick={onClose}
                 className={
-                  item.isActive
+                  isActive
                     ? "flex w-full items-center gap-3 rounded-2xl bg-blue-500 px-4 py-3 text-left text-sm font-medium text-white"
                     : "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
                 }
               >
                 <Icon className="size-4" />
                 {item.label}
-              </button>
+              </Link>
             );
           })}
         </nav>
