@@ -7,17 +7,18 @@ type TaskCardProps = {
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
-  low: "border-emerald-500/30 bg-emerald-500/10 text-emerald-300",
-  medium: "border-amber-500/30 bg-amber-500/10 text-amber-300",
-  high: "border-orange-500/30 bg-orange-500/10 text-orange-300",
-  urgent: "border-rose-500/30 bg-rose-500/10 text-rose-300",
+  low: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  medium:
+    "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  high: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-300",
+  urgent: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300",
 };
 
 export function TaskCard({ task }: TaskCardProps) {
   return (
-    <article className="rounded-3xl border border-slate-800 bg-slate-950 p-4 shadow-sm transition hover:border-slate-700">
+    <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
       <div className="flex items-start justify-between gap-3">
-        <h3 className="line-clamp-2 text-sm font-semibold leading-6 text-white">
+        <h3 className="line-clamp-2 text-sm font-semibold leading-6 text-slate-950 dark:text-white">
           {task.title}
         </h3>
 
@@ -31,7 +32,7 @@ export function TaskCard({ task }: TaskCardProps) {
         </span>
       </div>
 
-      <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-400">
+      <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
         {task.description}
       </p>
 
@@ -39,7 +40,7 @@ export function TaskCard({ task }: TaskCardProps) {
         {task.labels.map((label) => (
           <span
             key={label.id}
-            className="rounded-full bg-slate-800 px-2.5 py-1 text-[11px] font-medium text-slate-300"
+            className="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
           >
             {label.name}
           </span>
@@ -47,7 +48,7 @@ export function TaskCard({ task }: TaskCardProps) {
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-slate-500">
+        <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           <CalendarDays className="size-3.5" />
           <span>{task.dueDate}</span>
         </div>

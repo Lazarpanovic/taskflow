@@ -8,22 +8,22 @@ export default function Home() {
     <DashboardShell>
       <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
         <div>
-          <p className="text-sm font-medium text-blue-400">
+          <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
             Project Management
           </p>
 
-          <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-slate-950 dark:text-white sm:text-3xl">
             Kanban Board
           </h2>
 
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
             Plan, prioritize, and track your work across a clean drag-and-drop
             workflow.
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <button className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:text-white">
+          <button className="rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:text-slate-950 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300 dark:hover:text-white">
             Reset demo data
           </button>
 

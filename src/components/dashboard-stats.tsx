@@ -44,17 +44,19 @@ export function DashboardStats({ tasks }: DashboardStatsProps) {
         return (
           <article
             key={stat.label}
-            className="rounded-3xl border border-slate-800 bg-slate-900/70 p-5"
+            className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900/70"
           >
             <div className="flex items-center justify-between gap-4">
               <div>
-                <p className="text-sm text-slate-400">{stat.label}</p>
-                <p className="mt-2 text-3xl font-bold text-white">
+                <p className="text-sm text-slate-500 dark:text-slate-400">
+                  {stat.label}
+                </p>
+                <p className="mt-2 text-3xl font-bold text-slate-950 dark:text-white">
                   {stat.value}
                 </p>
               </div>
 
-              <div className="flex size-12 items-center justify-center rounded-2xl bg-slate-800 text-blue-400">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-blue-50 text-blue-600 dark:bg-slate-800 dark:text-blue-400">
                 <Icon className="size-5" />
               </div>
             </div>

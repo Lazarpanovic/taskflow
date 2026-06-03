@@ -25,7 +25,7 @@ const navigationItems = [
 
 export function Sidebar() {
   return (
-    <aside className="hidden min-h-screen w-72 shrink-0 border-r border-slate-800 bg-slate-950 px-5 py-6 text-white lg:block">
+    <aside className="hidden min-h-screen w-72 shrink-0 border-r border-slate-200 bg-white px-5 py-6 text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-white lg:block">
       <div>
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-2xl bg-blue-500 text-sm font-bold text-white">
@@ -34,7 +34,9 @@ export function Sidebar() {
 
           <div>
             <p className="text-lg font-bold tracking-tight">TaskFlow</p>
-            <p className="text-xs text-slate-400">Project dashboard</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              Project dashboard
+            </p>
           </div>
         </div>
 
@@ -48,7 +50,7 @@ export function Sidebar() {
                 className={
                   item.isActive
                     ? "flex w-full items-center gap-3 rounded-2xl bg-blue-500 px-4 py-3 text-left text-sm font-medium text-white"
-                    : "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-400 transition hover:bg-slate-900 hover:text-white"
+                    : "flex w-full items-center gap-3 rounded-2xl px-4 py-3 text-left text-sm font-medium text-slate-500 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-900 dark:hover:text-white"
                 }
               >
                 <Icon className="size-4" />
@@ -59,9 +61,11 @@ export function Sidebar() {
         </nav>
       </div>
 
-      <div className="mt-10 rounded-3xl border border-slate-800 bg-slate-900/60 p-4">
-        <p className="text-sm font-semibold text-white">Portfolio Project</p>
-        <p className="mt-2 text-xs leading-5 text-slate-400">
+      <div className="mt-10 rounded-3xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+        <p className="text-sm font-semibold text-slate-950 dark:text-white">
+          Portfolio Project
+        </p>
+        <p className="mt-2 text-xs leading-5 text-slate-500 dark:text-slate-400">
           Built with Next.js, TypeScript, Tailwind CSS, dnd-kit and
           localStorage.
         </p>
