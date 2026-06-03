@@ -1,9 +1,9 @@
 "use client";
 
-import type { KeyboardEvent, ReactNode } from "react";
+import type { KeyboardEvent } from "react";
 import { CSS } from "@dnd-kit/utilities";
-import { useDraggable } from "@dnd-kit/core";
-import { CalendarDays, GripVertical } from "lucide-react";
+import { useDraggable, useDroppable } from "@dnd-kit/core";
+import { CalendarDays } from "lucide-react";
 import type { Task, TaskPriority } from "@/types";
 import { cn } from "@/lib/utils";
 import { formatDate, getDueDateStatus } from "@/lib/date";
@@ -16,7 +16,6 @@ type TaskCardProps = {
 type TaskCardPreviewProps = {
   task: Task;
   isOverlay?: boolean;
-  dragHandle?: ReactNode;
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
@@ -39,7 +38,6 @@ const dueDateClasses = {
 export function TaskCardPreview({
   task,
   isOverlay = false,
-  dragHandle,
 }: TaskCardPreviewProps) {
   const dueDateStatus = getDueDateStatus(task.dueDate);
 
@@ -56,8 +54,6 @@ export function TaskCardPreview({
         <h3 className="line-clamp-2 text-sm font-semibold leading-6 text-slate-950 dark:text-white">
           {task.title}
         </h3>
-
-        {dragHandle}
       </div>
 
       <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -106,14 +102,32 @@ export function TaskCardPreview({
 }
 
 export function TaskCard({ task, onClick }: TaskCardProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: task.id,
-      data: {
-        type: "task",
-        task,
-      },
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: task.id,
+    data: {
+      type: "task",
+      task,
+    },
+  });
+
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+    id: task.id,
+    data: {
+      type: "task",
+      task,
+    },
+  });
+
+  const setNodeRef = (node: HTMLDivElement | null) => {
+    setDraggableNodeRef(node);
+    setDroppableNodeRef(node);
+  };
 
   const {
     role: draggableRole,
@@ -132,12 +146,6 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     }
   };
 
-  const dragIndicator = (
-    <div className="shrink-0 rounded-lg p-1 text-slate-400 transition group-hover:text-slate-600 dark:group-hover:text-slate-300">
-      <GripVertical className="size-4" />
-    </div>
-  );
-
   return (
     <div
       ref={setNodeRef}
@@ -147,13 +155,14 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "group touch-none cursor-grab outline-none will-change-transform active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950",
+        "touch-none cursor-grab outline-none will-change-transform active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950",
         isDragging && "opacity-30",
+        isOver && !isDragging && "rounded-3xl ring-2 ring-blue-400",
       )}
       {...listeners}
       {...draggableAttributes}
     >
-      <TaskCardPreview task={task} dragHandle={dragIndicator} />
+      <TaskCardPreview task={task} />
     </div>
   );
 }

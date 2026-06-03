@@ -14,12 +14,7 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import {
-  ArrowDownToLine,
-  ArrowUpRight,
-  CalendarDays,
-  GripVertical,
-} from "lucide-react";
+import { CalendarDays, MoreHorizontal } from "lucide-react";
 import { demoTasks } from "@/data/tasks";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
@@ -41,6 +36,8 @@ type TicketSectionProps = {
   variant: TicketSectionVariant;
   onMoveToSprint: (taskId: string) => void;
   onMoveToBacklog: (taskId: string) => void;
+  onMoveToTop: (taskId: string, variant: TicketSectionVariant) => void;
+  onMoveToBottom: (taskId: string, variant: TicketSectionVariant) => void;
 };
 
 type TicketRowProps = {
@@ -48,6 +45,8 @@ type TicketRowProps = {
   variant: TicketSectionVariant;
   onMoveToSprint: (taskId: string) => void;
   onMoveToBacklog: (taskId: string) => void;
+  onMoveToTop: (taskId: string, variant: TicketSectionVariant) => void;
+  onMoveToBottom: (taskId: string, variant: TicketSectionVariant) => void;
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
@@ -80,6 +79,126 @@ function formatStatusLabel(status: TaskStatus) {
     .split("-")
     .map((word) => word[0].toUpperCase() + word.slice(1))
     .join(" ");
+}
+
+function getSectionStatus(variant: TicketSectionVariant): TaskStatus {
+  return variant === "backlog" ? "backlog" : "todo";
+}
+
+function getTaskVariant(task: Task): TicketSectionVariant {
+  return task.status === "backlog" ? "backlog" : "sprint";
+}
+
+function isTaskInVariant(task: Task, variant: TicketSectionVariant) {
+  if (variant === "backlog") {
+    return task.status === "backlog";
+  }
+
+  return task.status !== "backlog";
+}
+
+function moveTaskBeforeTarget(
+  tasks: Task[],
+  activeTaskId: string,
+  targetTaskId: string,
+  nextStatus: TaskStatus,
+) {
+  const activeTask = tasks.find((task) => task.id === activeTaskId);
+
+  if (!activeTask) {
+    return tasks;
+  }
+
+  const updatedActiveTask: Task = {
+    ...activeTask,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const withoutActiveTask = tasks.filter((task) => task.id !== activeTaskId);
+  const targetIndex = withoutActiveTask.findIndex(
+    (task) => task.id === targetTaskId,
+  );
+
+  if (targetIndex === -1) {
+    return [...withoutActiveTask, updatedActiveTask];
+  }
+
+  return [
+    ...withoutActiveTask.slice(0, targetIndex),
+    updatedActiveTask,
+    ...withoutActiveTask.slice(targetIndex),
+  ];
+}
+
+function moveTaskToSectionEnd(
+  tasks: Task[],
+  activeTaskId: string,
+  variant: TicketSectionVariant,
+) {
+  const activeTask = tasks.find((task) => task.id === activeTaskId);
+
+  if (!activeTask) {
+    return tasks;
+  }
+
+  const nextStatus = getSectionStatus(variant);
+  const updatedActiveTask: Task = {
+    ...activeTask,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const withoutActiveTask = tasks.filter((task) => task.id !== activeTaskId);
+
+  const lastIndexInSection = withoutActiveTask
+    .map((task, index) => ({ task, index }))
+    .filter(({ task }) => isTaskInVariant(task, variant))
+    .at(-1)?.index;
+
+  if (lastIndexInSection === undefined) {
+    return [...withoutActiveTask, updatedActiveTask];
+  }
+
+  return [
+    ...withoutActiveTask.slice(0, lastIndexInSection + 1),
+    updatedActiveTask,
+    ...withoutActiveTask.slice(lastIndexInSection + 1),
+  ];
+}
+
+function moveTaskToSectionTop(
+  tasks: Task[],
+  taskId: string,
+  variant: TicketSectionVariant,
+) {
+  const task = tasks.find((item) => item.id === taskId);
+
+  if (!task) {
+    return tasks;
+  }
+
+  const nextStatus = getSectionStatus(variant);
+  const updatedTask: Task = {
+    ...task,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const withoutTask = tasks.filter((item) => item.id !== taskId);
+  const firstIndexInSection = withoutTask.findIndex((item) =>
+    isTaskInVariant(item, variant),
+  );
+
+  if (firstIndexInSection === -1) {
+    return [updatedTask, ...withoutTask];
+  }
+
+  return [
+    ...withoutTask.slice(0, firstIndexInSection),
+    updatedTask,
+    ...withoutTask.slice(firstIndexInSection),
+  ];
 }
 
 function TicketRowPreview({ task }: { task: Task }) {
@@ -154,15 +273,37 @@ function TicketRow({
   variant,
   onMoveToSprint,
   onMoveToBacklog,
+  onMoveToTop,
+  onMoveToBottom,
 }: TicketRowProps) {
-  const { attributes, listeners, setNodeRef, transform, isDragging } =
-    useDraggable({
-      id: task.id,
-      data: {
-        type: "ticket",
-        task,
-      },
-    });
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableNodeRef,
+    transform,
+    isDragging,
+  } = useDraggable({
+    id: task.id,
+    data: {
+      type: "ticket",
+      task,
+    },
+  });
+
+  const { setNodeRef: setDroppableNodeRef, isOver } = useDroppable({
+    id: task.id,
+    data: {
+      type: "ticket",
+      task,
+    },
+  });
+
+  const setNodeRef = (node: HTMLDivElement | null) => {
+    setDraggableNodeRef(node);
+    setDroppableNodeRef(node);
+  };
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -173,50 +314,99 @@ function TicketRow({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "touch-none will-change-transform",
+        "relative touch-none will-change-transform",
+        isMenuOpen ? "z-50" : "z-0",
         isDragging && "opacity-30",
+        isOver && !isDragging && "rounded-2xl ring-2 ring-blue-400",
       )}
     >
       <div
-        className="group flex cursor-grab flex-col gap-2 rounded-2xl border border-transparent transition hover:border-slate-200 active:cursor-grabbing dark:hover:border-slate-800 sm:flex-row sm:items-center"
+        className="relative flex cursor-grab flex-col gap-2 rounded-2xl border border-transparent transition hover:border-slate-200 active:cursor-grabbing dark:hover:border-slate-800 sm:flex-row sm:items-center"
         {...listeners}
         {...attributes}
       >
-        <div className="flex shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-400 shadow-sm transition group-hover:text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:group-hover:text-slate-200">
-          <GripVertical className="size-4" />
-        </div>
-
         <div className="min-w-0 flex-1">
           <TicketRowPreview task={task} />
         </div>
 
-        {variant === "backlog" ? (
+        <div className="relative shrink-0">
           <button
             type="button"
             onPointerDown={(event) => event.stopPropagation()}
             onClick={(event) => {
               event.stopPropagation();
-              onMoveToSprint(task.id);
+              setIsMenuOpen((current) => !current);
             }}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-400"
+            className="inline-flex size-11 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-500 shadow-sm transition hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
           >
-            <ArrowUpRight className="size-4" />
-            Sprint
+            <MoreHorizontal className="size-5" />
           </button>
-        ) : (
-          <button
-            type="button"
-            onPointerDown={(event) => event.stopPropagation()}
-            onClick={(event) => {
-              event.stopPropagation();
-              onMoveToBacklog(task.id);
-            }}
-            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
-          >
-            <ArrowDownToLine className="size-4" />
-            Backlog
-          </button>
-        )}
+
+          {isMenuOpen ? (
+            <div
+              className={cn(
+                "absolute right-0 z-[999] w-48 rounded-2xl border border-slate-200 bg-white p-2 shadow-2xl dark:border-slate-800 dark:bg-slate-950",
+                variant === "sprint" ? "top-12" : "bottom-12",
+              )}
+            >
+              {variant === "backlog" ? (
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onMoveToSprint(task.id);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                >
+                  Move to sprint
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onPointerDown={(event) => event.stopPropagation()}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onMoveToBacklog(task.id);
+                    setIsMenuOpen(false);
+                  }}
+                  className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+                >
+                  Move to backlog
+                </button>
+              )}
+
+              <div className="my-2 h-px bg-slate-100 dark:bg-slate-800" />
+
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMoveToTop(task.id, variant);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+              >
+                Move to top
+              </button>
+
+              <button
+                type="button"
+                onPointerDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onMoveToBottom(task.id, variant);
+                  setIsMenuOpen(false);
+                }}
+                className="w-full rounded-xl px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-950 dark:text-slate-300 dark:hover:bg-slate-900 dark:hover:text-white"
+              >
+                Move to bottom
+              </button>
+            </div>
+          ) : null}
+        </div>
       </div>
     </div>
   );
@@ -230,6 +420,8 @@ function TicketSection({
   variant,
   onMoveToSprint,
   onMoveToBacklog,
+  onMoveToTop,
+  onMoveToBottom,
 }: TicketSectionProps) {
   const { setNodeRef, isOver } = useDroppable({
     id,
@@ -239,7 +431,7 @@ function TicketSection({
     <section
       ref={setNodeRef}
       className={cn(
-        "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900/70",
+        "overflow-visible rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900/70",
         isOver &&
           "border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/20",
       )}
@@ -280,6 +472,8 @@ function TicketSection({
               variant={variant}
               onMoveToSprint={onMoveToSprint}
               onMoveToBacklog={onMoveToBacklog}
+              onMoveToTop={onMoveToTop}
+              onMoveToBottom={onMoveToBottom}
             />
           ))}
         </div>
@@ -305,7 +499,7 @@ export function TicketsPage() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 6,
+        distance: 8,
       },
     }),
   );
@@ -315,29 +509,25 @@ export function TicketsPage() {
 
   const moveTaskToSprint = (taskId: string) => {
     setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: "todo",
-              updatedAt: new Date().toISOString(),
-            }
-          : task,
-      ),
+      moveTaskToSectionEnd(currentTasks, taskId, "sprint"),
     );
   };
 
   const moveTaskToBacklog = (taskId: string) => {
     setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === taskId
-          ? {
-              ...task,
-              status: "backlog",
-              updatedAt: new Date().toISOString(),
-            }
-          : task,
-      ),
+      moveTaskToSectionEnd(currentTasks, taskId, "backlog"),
+    );
+  };
+
+  const moveTaskToTop = (taskId: string, variant: TicketSectionVariant) => {
+    setTasks((currentTasks) =>
+      moveTaskToSectionTop(currentTasks, taskId, variant),
+    );
+  };
+
+  const moveTaskToBottom = (taskId: string, variant: TicketSectionVariant) => {
+    setTasks((currentTasks) =>
+      moveTaskToSectionEnd(currentTasks, taskId, variant),
     );
   };
 
@@ -361,9 +551,32 @@ export function TicketsPage() {
 
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
-    const draggedTask = tasks.find((task) => task.id === activeTaskId);
 
-    if (!draggedTask) {
+    if (activeTaskId === overId) {
+      return;
+    }
+
+    const activeTask = tasks.find((task) => task.id === activeTaskId);
+
+    if (!activeTask) {
+      return;
+    }
+
+    const overTask = tasks.find((task) => task.id === overId);
+
+    if (overTask) {
+      const targetVariant = getTaskVariant(overTask);
+      const nextStatus = getSectionStatus(targetVariant);
+
+      setTasks((currentTasks) =>
+        moveTaskBeforeTarget(
+          currentTasks,
+          activeTaskId,
+          overTask.id,
+          nextStatus,
+        ),
+      );
+
       return;
     }
 
@@ -418,6 +631,8 @@ export function TicketsPage() {
           variant="sprint"
           onMoveToSprint={moveTaskToSprint}
           onMoveToBacklog={moveTaskToBacklog}
+          onMoveToTop={moveTaskToTop}
+          onMoveToBottom={moveTaskToBottom}
         />
 
         <TicketSection
@@ -428,6 +643,8 @@ export function TicketsPage() {
           variant="backlog"
           onMoveToSprint={moveTaskToSprint}
           onMoveToBacklog={moveTaskToBacklog}
+          onMoveToTop={moveTaskToTop}
+          onMoveToBottom={moveTaskToBottom}
         />
       </div>
 

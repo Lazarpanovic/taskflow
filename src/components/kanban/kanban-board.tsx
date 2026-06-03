@@ -25,6 +25,75 @@ type KanbanBoardProps = {
   visibleStatuses?: TaskStatus[];
 };
 
+function moveTaskBeforeTarget(
+  tasks: Task[],
+  activeTaskId: string,
+  targetTaskId: string,
+  nextStatus: TaskStatus,
+) {
+  const activeTask = tasks.find((task) => task.id === activeTaskId);
+
+  if (!activeTask) {
+    return tasks;
+  }
+
+  const updatedActiveTask: Task = {
+    ...activeTask,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const withoutActiveTask = tasks.filter((task) => task.id !== activeTaskId);
+  const targetIndex = withoutActiveTask.findIndex(
+    (task) => task.id === targetTaskId,
+  );
+
+  if (targetIndex === -1) {
+    return [...withoutActiveTask, updatedActiveTask];
+  }
+
+  return [
+    ...withoutActiveTask.slice(0, targetIndex),
+    updatedActiveTask,
+    ...withoutActiveTask.slice(targetIndex),
+  ];
+}
+
+function moveTaskToColumnEnd(
+  tasks: Task[],
+  activeTaskId: string,
+  nextStatus: TaskStatus,
+) {
+  const activeTask = tasks.find((task) => task.id === activeTaskId);
+
+  if (!activeTask) {
+    return tasks;
+  }
+
+  const updatedActiveTask: Task = {
+    ...activeTask,
+    status: nextStatus,
+    updatedAt: new Date().toISOString(),
+  };
+
+  const withoutActiveTask = tasks.filter((task) => task.id !== activeTaskId);
+
+  const lastIndexInColumn = withoutActiveTask
+    .map((task, index) => ({ task, index }))
+    .filter(({ task }) => task.status === nextStatus)
+    .at(-1)?.index;
+
+  if (lastIndexInColumn === undefined) {
+    return [...withoutActiveTask, updatedActiveTask];
+  }
+
+  return [
+    ...withoutActiveTask.slice(0, lastIndexInColumn + 1),
+    updatedActiveTask,
+    ...withoutActiveTask.slice(lastIndexInColumn + 1),
+  ];
+}
+
 export function KanbanBoard({
   tasks,
   setTasks,
@@ -51,7 +120,7 @@ export function KanbanBoard({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 6,
+        distance: 8,
       },
     }),
   );
@@ -82,9 +151,9 @@ export function KanbanBoard({
     }
 
     const activeTaskId = active.id.toString();
-    const overColumnId = over.id.toString();
+    const overId = over.id.toString();
 
-    if (!isVisibleTaskStatus(overColumnId)) {
+    if (activeTaskId === overId) {
       return;
     }
 
@@ -94,20 +163,31 @@ export function KanbanBoard({
       return;
     }
 
-    if (activeTask.status === overColumnId) {
+    const overTask = tasks.find((task) => task.id === overId);
+
+    if (overTask) {
+      if (!visibleColumnIds.includes(overTask.status)) {
+        return;
+      }
+
+      setTasks((currentTasks) =>
+        moveTaskBeforeTarget(
+          currentTasks,
+          activeTaskId,
+          overTask.id,
+          overTask.status,
+        ),
+      );
+
+      return;
+    }
+
+    if (!isVisibleTaskStatus(overId)) {
       return;
     }
 
     setTasks((currentTasks) =>
-      currentTasks.map((task) =>
-        task.id === activeTaskId
-          ? {
-              ...task,
-              status: overColumnId,
-              updatedAt: new Date().toISOString(),
-            }
-          : task,
-      ),
+      moveTaskToColumnEnd(currentTasks, activeTaskId, overId),
     );
   };
 
