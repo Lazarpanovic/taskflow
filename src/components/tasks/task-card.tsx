@@ -1,9 +1,18 @@
-import { CalendarDays } from "lucide-react";
+"use client";
+
+import { CSS } from "@dnd-kit/utilities";
+import { useDraggable } from "@dnd-kit/core";
+import { CalendarDays, GripVertical } from "lucide-react";
 import type { Task, TaskPriority } from "@/types";
 import { cn } from "@/lib/utils";
 
 type TaskCardProps = {
   task: Task;
+};
+
+type TaskCardPreviewProps = {
+  task: Task;
+  isOverlay?: boolean;
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
@@ -14,22 +23,29 @@ const priorityClasses: Record<TaskPriority, string> = {
   urgent: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300",
 };
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCardPreview({
+  task,
+  isOverlay = false,
+}: TaskCardPreviewProps) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition hover:border-slate-300 dark:border-slate-800 dark:bg-slate-950 dark:hover:border-slate-700">
+    <article
+      className={cn(
+        "rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition dark:border-slate-800 dark:bg-slate-950",
+        isOverlay
+          ? "w-[280px] rotate-2 cursor-grabbing border-blue-300 shadow-2xl dark:border-blue-500"
+          : "hover:border-slate-300 dark:hover:border-slate-700",
+      )}
+    >
       <div className="flex items-start justify-between gap-3">
         <h3 className="line-clamp-2 text-sm font-semibold leading-6 text-slate-950 dark:text-white">
           {task.title}
         </h3>
 
-        <span
-          className={cn(
-            "shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
-            priorityClasses[task.priority],
-          )}
-        >
-          {task.priority}
-        </span>
+        {!isOverlay && (
+          <div className="shrink-0 rounded-lg p-1 text-slate-400">
+            <GripVertical className="size-4" />
+          </div>
+        )}
       </div>
 
       <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -53,13 +69,59 @@ export function TaskCard({ task }: TaskCardProps) {
           <span>{task.dueDate}</span>
         </div>
 
-        <div
-          title={task.assignee.name}
-          className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white"
-        >
-          {task.assignee.initials}
+        <div className="flex items-center gap-2">
+          <span
+            className={cn(
+              "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+              priorityClasses[task.priority],
+            )}
+          >
+            {task.priority}
+          </span>
+
+          <div
+            title={task.assignee.name}
+            className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white"
+          >
+            {task.assignee.initials}
+          </div>
         </div>
       </div>
     </article>
+  );
+}
+
+export function TaskCard({ task }: TaskCardProps) {
+  const { attributes, listeners, setNodeRef, transform, isDragging } =
+    useDraggable({
+      id: task.id,
+      data: {
+        type: "task",
+        task,
+      },
+    });
+
+  const style = {
+    transform: CSS.Translate.toString(transform),
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={cn(
+        "touch-none will-change-transform",
+        isDragging && "opacity-30",
+      )}
+    >
+      <button
+        type="button"
+        className="block w-full cursor-grab text-left active:cursor-grabbing"
+        {...listeners}
+        {...attributes}
+      >
+        <TaskCardPreview task={task} />
+      </button>
+    </div>
   );
 }

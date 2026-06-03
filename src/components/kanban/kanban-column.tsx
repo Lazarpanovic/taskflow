@@ -1,4 +1,8 @@
+"use client";
+
+import { useDroppable } from "@dnd-kit/core";
 import type { KanbanColumn as KanbanColumnType, Task } from "@/types";
+import { cn } from "@/lib/utils";
 import { TaskCard } from "@/components/tasks/task-card";
 
 type KanbanColumnProps = {
@@ -7,8 +11,19 @@ type KanbanColumnProps = {
 };
 
 export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: column.id,
+  });
+
   return (
-    <section className="flex max-h-[720px] min-h-[480px] min-w-[280px] flex-1 flex-col rounded-3xl border border-slate-200 bg-slate-100/80 dark:border-slate-800 dark:bg-slate-900/70">
+    <section
+      ref={setNodeRef}
+      className={cn(
+        "flex max-h-[720px] min-h-[480px] min-w-[280px] flex-1 flex-col rounded-3xl border border-slate-200 bg-slate-100/80 transition dark:border-slate-800 dark:bg-slate-900/70",
+        isOver &&
+          "border-blue-400 bg-blue-50/80 dark:border-blue-500 dark:bg-blue-950/20",
+      )}
+    >
       <div className="border-b border-slate-200 p-4 dark:border-slate-800">
         <div className="flex items-center justify-between gap-3">
           <div>
@@ -31,7 +46,7 @@ export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
           tasks.map((task) => <TaskCard key={task.id} task={task} />)
         ) : (
           <div className="flex h-32 items-center justify-center rounded-3xl border border-dashed border-slate-300 text-sm text-slate-400 dark:border-slate-800 dark:text-slate-500">
-            No tasks here
+            Drop tasks here
           </div>
         )}
       </div>
