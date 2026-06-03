@@ -2,10 +2,11 @@
 
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 
@@ -21,38 +22,60 @@ type ThemeContextValue = {
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 const STORAGE_KEY = "taskflow-theme";
+const THEME_EVENT = "taskflow-theme-change";
 
 type ThemeProviderProps = {
   children: ReactNode;
 };
 
+function getStoredTheme(): Theme {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+
+  const storedTheme = window.localStorage.getItem(STORAGE_KEY);
+
+  if (storedTheme === "light" || storedTheme === "dark") {
+    return storedTheme;
+  }
+
+  return "light";
+}
+
+function subscribe(callback: () => void) {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+
+  window.addEventListener("storage", callback);
+  window.addEventListener(THEME_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(THEME_EVENT, callback);
+  };
+}
+
 export function ThemeProvider({ children }: ThemeProviderProps) {
-  const [theme, setThemeState] = useState<Theme>("light");
+  const theme = useSyncExternalStore<Theme>(
+    subscribe,
+    getStoredTheme,
+    () => "light",
+  );
 
   useEffect(() => {
-    const storedTheme = window.localStorage.getItem(
-      STORAGE_KEY,
-    ) as Theme | null;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    window.localStorage.setItem(STORAGE_KEY, theme);
+  }, [theme]);
 
-    if (storedTheme === "light" || storedTheme === "dark") {
-      setThemeState(storedTheme);
-      document.documentElement.classList.toggle("dark", storedTheme === "dark");
-      return;
-    }
-
-    document.documentElement.classList.remove("dark");
-    window.localStorage.setItem(STORAGE_KEY, "light");
+  const setTheme = useCallback((nextTheme: Theme) => {
+    window.localStorage.setItem(STORAGE_KEY, nextTheme);
+    window.dispatchEvent(new Event(THEME_EVENT));
   }, []);
 
-  const setTheme = (nextTheme: Theme) => {
-    setThemeState(nextTheme);
-    window.localStorage.setItem(STORAGE_KEY, nextTheme);
-    document.documentElement.classList.toggle("dark", nextTheme === "dark");
-  };
-
-  const toggleTheme = () => {
+  const toggleTheme = useCallback(() => {
     setTheme(theme === "dark" ? "light" : "dark");
-  };
+  }, [setTheme, theme]);
 
   const value = useMemo(
     () => ({
@@ -61,7 +84,7 @@ export function ThemeProvider({ children }: ThemeProviderProps) {
       toggleTheme,
       setTheme,
     }),
-    [theme],
+    [theme, toggleTheme, setTheme],
   );
 
   return (

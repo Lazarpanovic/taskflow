@@ -57,7 +57,7 @@ export function TaskFilters({
 
   return (
     <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
-      <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_auto]">
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-[1fr_180px_180px_auto]">
         <div className="relative">
           <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-slate-400 dark:text-slate-500" />
 

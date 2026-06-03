@@ -1,5 +1,6 @@
 "use client";
 
+import type { KeyboardEvent, ReactNode } from "react";
 import { CSS } from "@dnd-kit/utilities";
 import { useDraggable } from "@dnd-kit/core";
 import { CalendarDays, GripVertical } from "lucide-react";
@@ -14,7 +15,7 @@ type TaskCardProps = {
 type TaskCardPreviewProps = {
   task: Task;
   isOverlay?: boolean;
-  dragHandle?: React.ReactNode;
+  dragHandle?: ReactNode;
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
@@ -104,6 +105,13 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onClick?.();
+    }
+  };
+
   const dragHandle = (
     <button
       type="button"
@@ -121,14 +129,16 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     <div
       ref={setNodeRef}
       style={style}
+      role="button"
+      tabIndex={0}
+      onClick={onClick}
+      onKeyDown={handleKeyDown}
       className={cn(
-        "touch-none will-change-transform",
+        "touch-none cursor-pointer outline-none will-change-transform focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950",
         isDragging && "opacity-30",
       )}
     >
-      <button type="button" onClick={onClick} className="block w-full">
-        <TaskCardPreview task={task} dragHandle={dragHandle} />
-      </button>
+      <TaskCardPreview task={task} dragHandle={dragHandle} />
     </div>
   );
 }

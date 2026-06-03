@@ -24,7 +24,7 @@ export function KanbanColumn({
     <section
       ref={setNodeRef}
       className={cn(
-        "flex max-h-[720px] min-h-[480px] min-w-[280px] flex-1 flex-col rounded-3xl border border-slate-200 bg-slate-100/80 transition dark:border-slate-800 dark:bg-slate-900/70",
+        "flex max-h-[720px] min-h-[480px] min-w-[300px] flex-1 flex-col rounded-3xl border border-slate-200 bg-slate-100/80 transition dark:border-slate-800 dark:bg-slate-900/70",
         isOver &&
           "border-blue-400 bg-blue-50/80 dark:border-blue-500 dark:bg-blue-950/20",
       )}

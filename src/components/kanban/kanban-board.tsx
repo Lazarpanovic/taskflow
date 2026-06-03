@@ -101,7 +101,7 @@ export function KanbanBoard({
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveTask(null)}
     >
-      <section className="mt-6 overflow-x-auto pb-4">
+      <section className="-mx-4 mt-6 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
         <div className="flex gap-4">
           {kanbanColumns.map((column) => {
             const columnTasks = tasks.filter(

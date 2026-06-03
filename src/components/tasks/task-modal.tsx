@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { X } from "lucide-react";
 import type { Task, TaskPriority, TaskStatus } from "@/types";
 
@@ -46,41 +46,22 @@ export function TaskModal({
 }: TaskModalProps) {
   const isEditing = Boolean(task);
 
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [priority, setPriority] = useState<TaskPriority>("medium");
-  const [status, setStatus] = useState<TaskStatus>("todo");
-  const [dueDate, setDueDate] = useState("");
-  const [labels, setLabels] = useState("");
-  const [assigneeName, setAssigneeName] = useState("Lazar Panović");
-  const [assigneeInitials, setAssigneeInitials] = useState("LP");
-
-  useEffect(() => {
-    if (!isOpen) {
-      return;
-    }
-
-    if (task) {
-      setTitle(task.title);
-      setDescription(task.description);
-      setPriority(task.priority);
-      setStatus(task.status);
-      setDueDate(task.dueDate);
-      setLabels(task.labels.map((label) => label.name).join(", "));
-      setAssigneeName(task.assignee.name);
-      setAssigneeInitials(task.assignee.initials);
-      return;
-    }
-
-    setTitle("");
-    setDescription("");
-    setPriority("medium");
-    setStatus("todo");
-    setDueDate("");
-    setLabels("");
-    setAssigneeName("Lazar Panović");
-    setAssigneeInitials("LP");
-  }, [isOpen, task]);
+  const [title, setTitle] = useState(task?.title ?? "");
+  const [description, setDescription] = useState(task?.description ?? "");
+  const [priority, setPriority] = useState<TaskPriority>(
+    task?.priority ?? "medium",
+  );
+  const [status, setStatus] = useState<TaskStatus>(task?.status ?? "todo");
+  const [dueDate, setDueDate] = useState(task?.dueDate ?? "");
+  const [labels, setLabels] = useState(
+    task?.labels.map((label) => label.name).join(", ") ?? "",
+  );
+  const [assigneeName, setAssigneeName] = useState(
+    task?.assignee.name ?? "Lazar Panović",
+  );
+  const [assigneeInitials, setAssigneeInitials] = useState(
+    task?.assignee.initials ?? "LP",
+  );
 
   const canSubmit = useMemo(() => {
     return title.trim().length > 0 && description.trim().length > 0;
@@ -146,7 +127,7 @@ export function TaskModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/60 px-4 py-6 backdrop-blur-sm">
-      <div className="w-full max-w-2xl rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
+      <div className="max-h-[90vh] w-full max-w-2xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl dark:border-slate-800 dark:bg-slate-950">
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800">
           <div>
             <p className="text-sm font-medium text-blue-600 dark:text-blue-400">
@@ -166,7 +147,10 @@ export function TaskModal({
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-5 px-6 py-6">
+        <form
+          onSubmit={handleSubmit}
+          className="max-h-[calc(90vh-96px)] space-y-5 overflow-y-auto px-6 py-6"
+        >
           <div>
             <label className="text-sm font-medium text-slate-700 dark:text-slate-300">
               Title

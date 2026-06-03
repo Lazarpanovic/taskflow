@@ -199,13 +199,16 @@ export function TaskBoard() {
         </div>
       )}
 
-      <TaskModal
-        task={selectedTask}
-        isOpen={isTaskModalOpen}
-        onClose={closeTaskModal}
-        onSave={saveTask}
-        onDelete={deleteTask}
-      />
+      {isTaskModalOpen ? (
+        <TaskModal
+          key={selectedTask?.id ?? "new-task"}
+          task={selectedTask}
+          isOpen={isTaskModalOpen}
+          onClose={closeTaskModal}
+          onSave={saveTask}
+          onDelete={deleteTask}
+        />
+      ) : null}
     </>
   );
 }
