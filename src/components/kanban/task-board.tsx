@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { TaskFilters } from "@/components/tasks/task-filters";
 import { TaskModal } from "@/components/tasks/task-modal";
 import { demoTasks } from "@/data/tasks";
 import { useLocalStorage } from "@/hooks/use-local-storage";
-import type { Task } from "@/types";
+import type { Task, TaskPriority, TaskStatus } from "@/types";
 
 const TASKS_STORAGE_KEY = "taskflow-tasks";
 
@@ -18,6 +19,38 @@ export function TaskBoard() {
 
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPriority, setSelectedPriority] = useState<
+    TaskPriority | "all"
+  >("all");
+  const [selectedStatus, setSelectedStatus] = useState<TaskStatus | "all">(
+    "all",
+  );
+
+  const filteredTasks = useMemo(() => {
+    const normalizedSearch = searchQuery.trim().toLowerCase();
+
+    return tasks.filter((task) => {
+      const matchesSearch =
+        normalizedSearch.length === 0 ||
+        task.title.toLowerCase().includes(normalizedSearch) ||
+        task.description.toLowerCase().includes(normalizedSearch) ||
+        task.assignee.name.toLowerCase().includes(normalizedSearch) ||
+        task.assignee.initials.toLowerCase().includes(normalizedSearch) ||
+        task.labels.some((label) =>
+          label.name.toLowerCase().includes(normalizedSearch),
+        );
+
+      const matchesPriority =
+        selectedPriority === "all" || task.priority === selectedPriority;
+
+      const matchesStatus =
+        selectedStatus === "all" || task.status === selectedStatus;
+
+      return matchesSearch && matchesPriority && matchesStatus;
+    });
+  }, [tasks, searchQuery, selectedPriority, selectedStatus]);
 
   const openCreateTaskModal = () => {
     setSelectedTask(null);
@@ -66,6 +99,13 @@ export function TaskBoard() {
     }
 
     setTasks(demoTasks);
+    clearFilters();
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedPriority("all");
+    setSelectedStatus("all");
   };
 
   if (!isInitialized) {
@@ -122,13 +162,42 @@ export function TaskBoard() {
         </div>
       </div>
 
-      <DashboardStats tasks={tasks} />
+      <DashboardStats tasks={filteredTasks} />
 
-      <KanbanBoard
-        tasks={tasks}
-        setTasks={setTasks}
-        onTaskClick={openEditTaskModal}
+      <TaskFilters
+        searchQuery={searchQuery}
+        selectedPriority={selectedPriority}
+        selectedStatus={selectedStatus}
+        onSearchChange={setSearchQuery}
+        onPriorityChange={setSelectedPriority}
+        onStatusChange={setSelectedStatus}
+        onClearFilters={clearFilters}
       />
+
+      {filteredTasks.length > 0 ? (
+        <KanbanBoard
+          tasks={filteredTasks}
+          setTasks={setTasks}
+          onTaskClick={openEditTaskModal}
+        />
+      ) : (
+        <div className="mt-6 flex min-h-[360px] flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center shadow-sm dark:border-slate-800 dark:bg-slate-900/70">
+          <p className="text-lg font-semibold text-slate-950 dark:text-white">
+            No matching tasks
+          </p>
+          <p className="mt-2 max-w-md text-sm leading-6 text-slate-500 dark:text-slate-400">
+            Try changing your search query or clearing the active filters.
+          </p>
+
+          <button
+            type="button"
+            onClick={clearFilters}
+            className="mt-5 rounded-2xl bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400"
+          >
+            Clear filters
+          </button>
+        </div>
+      )}
 
       <TaskModal
         task={selectedTask}
