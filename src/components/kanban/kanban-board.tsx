@@ -21,6 +21,7 @@ type SetTasks = (value: Task[] | ((tasks: Task[]) => Task[])) => void;
 type KanbanBoardProps = {
   tasks: Task[];
   setTasks: SetTasks;
+  onTaskClick: (task: Task) => void;
 };
 
 const columnIds = kanbanColumns.map((column) => column.id);
@@ -29,7 +30,11 @@ function isTaskStatus(value: unknown): value is TaskStatus {
   return typeof value === "string" && columnIds.includes(value as TaskStatus);
 }
 
-export function KanbanBoard({ tasks, setTasks }: KanbanBoardProps) {
+export function KanbanBoard({
+  tasks,
+  setTasks,
+  onTaskClick,
+}: KanbanBoardProps) {
   const [activeTask, setActiveTask] = useState<Task | null>(null);
 
   const sensors = useSensors(
@@ -108,6 +113,7 @@ export function KanbanBoard({ tasks, setTasks }: KanbanBoardProps) {
                 key={column.id}
                 column={column}
                 tasks={columnTasks}
+                onTaskClick={onTaskClick}
               />
             );
           })}

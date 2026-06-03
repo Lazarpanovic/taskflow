@@ -8,9 +8,14 @@ import { TaskCard } from "@/components/tasks/task-card";
 type KanbanColumnProps = {
   column: KanbanColumnType;
   tasks: Task[];
+  onTaskClick: (task: Task) => void;
 };
 
-export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
+export function KanbanColumn({
+  column,
+  tasks,
+  onTaskClick,
+}: KanbanColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
@@ -43,7 +48,13 @@ export function KanbanColumn({ column, tasks }: KanbanColumnProps) {
 
       <div className="flex-1 space-y-3 overflow-y-auto p-3">
         {tasks.length > 0 ? (
-          tasks.map((task) => <TaskCard key={task.id} task={task} />)
+          tasks.map((task) => (
+            <TaskCard
+              key={task.id}
+              task={task}
+              onClick={() => onTaskClick(task)}
+            />
+          ))
         ) : (
           <div className="flex h-32 items-center justify-center rounded-3xl border border-dashed border-slate-300 text-sm text-slate-400 dark:border-slate-800 dark:text-slate-500">
             Drop tasks here

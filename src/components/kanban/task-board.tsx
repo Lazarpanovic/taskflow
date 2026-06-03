@@ -1,7 +1,9 @@
 "use client";
 
+import { useState } from "react";
 import { DashboardStats } from "@/components/dashboard-stats";
 import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { TaskModal } from "@/components/tasks/task-modal";
 import { demoTasks } from "@/data/tasks";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import type { Task } from "@/types";
@@ -13,6 +15,46 @@ export function TaskBoard() {
     TASKS_STORAGE_KEY,
     demoTasks,
   );
+
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+
+  const openCreateTaskModal = () => {
+    setSelectedTask(null);
+    setIsTaskModalOpen(true);
+  };
+
+  const openEditTaskModal = (task: Task) => {
+    setSelectedTask(task);
+    setIsTaskModalOpen(true);
+  };
+
+  const closeTaskModal = () => {
+    setSelectedTask(null);
+    setIsTaskModalOpen(false);
+  };
+
+  const saveTask = (task: Task) => {
+    setTasks((currentTasks) => {
+      const taskExists = currentTasks.some((item) => item.id === task.id);
+
+      if (taskExists) {
+        return currentTasks.map((item) => (item.id === task.id ? task : item));
+      }
+
+      return [task, ...currentTasks];
+    });
+
+    closeTaskModal();
+  };
+
+  const deleteTask = (taskId: string) => {
+    setTasks((currentTasks) =>
+      currentTasks.filter((task) => task.id !== taskId),
+    );
+
+    closeTaskModal();
+  };
 
   const resetDemoData = () => {
     const confirmed = window.confirm(
@@ -72,6 +114,7 @@ export function TaskBoard() {
 
           <button
             type="button"
+            onClick={openCreateTaskModal}
             className="rounded-2xl bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400"
           >
             Add task
@@ -81,7 +124,19 @@ export function TaskBoard() {
 
       <DashboardStats tasks={tasks} />
 
-      <KanbanBoard tasks={tasks} setTasks={setTasks} />
+      <KanbanBoard
+        tasks={tasks}
+        setTasks={setTasks}
+        onTaskClick={openEditTaskModal}
+      />
+
+      <TaskModal
+        task={selectedTask}
+        isOpen={isTaskModalOpen}
+        onClose={closeTaskModal}
+        onSave={saveTask}
+        onDelete={deleteTask}
+      />
     </>
   );
 }

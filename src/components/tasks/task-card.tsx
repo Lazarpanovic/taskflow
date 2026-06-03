@@ -8,11 +8,13 @@ import { cn } from "@/lib/utils";
 
 type TaskCardProps = {
   task: Task;
+  onClick?: () => void;
 };
 
 type TaskCardPreviewProps = {
   task: Task;
   isOverlay?: boolean;
+  dragHandle?: React.ReactNode;
 };
 
 const priorityClasses: Record<TaskPriority, string> = {
@@ -26,11 +28,12 @@ const priorityClasses: Record<TaskPriority, string> = {
 export function TaskCardPreview({
   task,
   isOverlay = false,
+  dragHandle,
 }: TaskCardPreviewProps) {
   return (
     <article
       className={cn(
-        "rounded-3xl border border-slate-200 bg-white p-4 shadow-sm transition dark:border-slate-800 dark:bg-slate-950",
+        "rounded-3xl border border-slate-200 bg-white p-4 text-left shadow-sm transition dark:border-slate-800 dark:bg-slate-950",
         isOverlay
           ? "w-[280px] rotate-2 cursor-grabbing border-blue-300 shadow-2xl dark:border-blue-500"
           : "hover:border-slate-300 dark:hover:border-slate-700",
@@ -41,11 +44,7 @@ export function TaskCardPreview({
           {task.title}
         </h3>
 
-        {!isOverlay && (
-          <div className="shrink-0 rounded-lg p-1 text-slate-400">
-            <GripVertical className="size-4" />
-          </div>
-        )}
+        {dragHandle}
       </div>
 
       <p className="mt-3 line-clamp-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
@@ -66,7 +65,7 @@ export function TaskCardPreview({
       <div className="mt-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           <CalendarDays className="size-3.5" />
-          <span>{task.dueDate}</span>
+          <span>{task.dueDate || "No due date"}</span>
         </div>
 
         <div className="flex items-center gap-2">
@@ -91,7 +90,7 @@ export function TaskCardPreview({
   );
 }
 
-export function TaskCard({ task }: TaskCardProps) {
+export function TaskCard({ task, onClick }: TaskCardProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: task.id,
@@ -105,6 +104,19 @@ export function TaskCard({ task }: TaskCardProps) {
     transform: CSS.Translate.toString(transform),
   };
 
+  const dragHandle = (
+    <button
+      type="button"
+      className="shrink-0 cursor-grab rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing dark:hover:bg-slate-800 dark:hover:text-slate-300"
+      aria-label={`Drag ${task.title}`}
+      onClick={(event) => event.stopPropagation()}
+      {...listeners}
+      {...attributes}
+    >
+      <GripVertical className="size-4" />
+    </button>
+  );
+
   return (
     <div
       ref={setNodeRef}
@@ -114,13 +126,8 @@ export function TaskCard({ task }: TaskCardProps) {
         isDragging && "opacity-30",
       )}
     >
-      <button
-        type="button"
-        className="block w-full cursor-grab text-left active:cursor-grabbing"
-        {...listeners}
-        {...attributes}
-      >
-        <TaskCardPreview task={task} />
+      <button type="button" onClick={onClick} className="block w-full">
+        <TaskCardPreview task={task} dragHandle={dragHandle} />
       </button>
     </div>
   );
