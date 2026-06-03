@@ -177,16 +177,14 @@ function TicketRow({
         isDragging && "opacity-30",
       )}
     >
-      <div className="flex flex-col gap-2 rounded-2xl border border-transparent transition hover:border-slate-200 dark:hover:border-slate-800 sm:flex-row sm:items-center">
-        <button
-          type="button"
-          className="flex shrink-0 cursor-grab items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-400 shadow-sm transition hover:text-slate-700 active:cursor-grabbing dark:border-slate-800 dark:bg-slate-950 dark:hover:text-slate-200"
-          aria-label={`Drag ${task.title}`}
-          {...listeners}
-          {...attributes}
-        >
+      <div
+        className="group flex cursor-grab flex-col gap-2 rounded-2xl border border-transparent transition hover:border-slate-200 active:cursor-grabbing dark:hover:border-slate-800 sm:flex-row sm:items-center"
+        {...listeners}
+        {...attributes}
+      >
+        <div className="flex shrink-0 items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-400 shadow-sm transition group-hover:text-slate-700 dark:border-slate-800 dark:bg-slate-950 dark:group-hover:text-slate-200">
           <GripVertical className="size-4" />
-        </button>
+        </div>
 
         <div className="min-w-0 flex-1">
           <TicketRowPreview task={task} />
@@ -195,7 +193,11 @@ function TicketRow({
         {variant === "backlog" ? (
           <button
             type="button"
-            onClick={() => onMoveToSprint(task.id)}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onMoveToSprint(task.id);
+            }}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-400"
           >
             <ArrowUpRight className="size-4" />
@@ -204,7 +206,11 @@ function TicketRow({
         ) : (
           <button
             type="button"
-            onClick={() => onMoveToBacklog(task.id)}
+            onPointerDown={(event) => event.stopPropagation()}
+            onClick={(event) => {
+              event.stopPropagation();
+              onMoveToBacklog(task.id);
+            }}
             className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
           >
             <ArrowDownToLine className="size-4" />

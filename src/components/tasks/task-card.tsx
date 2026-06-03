@@ -41,6 +41,8 @@ export function TaskCardPreview({
   isOverlay = false,
   dragHandle,
 }: TaskCardPreviewProps) {
+  const dueDateStatus = getDueDateStatus(task.dueDate);
+
   return (
     <article
       className={cn(
@@ -74,9 +76,9 @@ export function TaskCardPreview({
       </div>
 
       <div className="mt-5 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
-          <CalendarDays className="size-3.5" />
-          <span className={dueDateClasses[getDueDateStatus(task.dueDate)]}>
+        <div className="flex items-center gap-2 text-xs">
+          <CalendarDays className="size-3.5 text-slate-400 dark:text-slate-500" />
+          <span className={dueDateClasses[dueDateStatus]}>
             {formatDate(task.dueDate)}
           </span>
         </div>
@@ -113,6 +115,12 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
       },
     });
 
+  const {
+    role: draggableRole,
+    tabIndex: draggableTabIndex,
+    ...draggableAttributes
+  } = attributes;
+
   const style = {
     transform: CSS.Translate.toString(transform),
   };
@@ -124,33 +132,28 @@ export function TaskCard({ task, onClick }: TaskCardProps) {
     }
   };
 
-  const dragHandle = (
-    <button
-      type="button"
-      className="shrink-0 cursor-grab rounded-lg p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 active:cursor-grabbing dark:hover:bg-slate-800 dark:hover:text-slate-300"
-      aria-label={`Drag ${task.title}`}
-      onClick={(event) => event.stopPropagation()}
-      {...listeners}
-      {...attributes}
-    >
+  const dragIndicator = (
+    <div className="shrink-0 rounded-lg p-1 text-slate-400 transition group-hover:text-slate-600 dark:group-hover:text-slate-300">
       <GripVertical className="size-4" />
-    </button>
+    </div>
   );
 
   return (
     <div
       ref={setNodeRef}
       style={style}
-      role="button"
-      tabIndex={0}
+      role={draggableRole ?? "button"}
+      tabIndex={draggableTabIndex ?? 0}
       onClick={onClick}
       onKeyDown={handleKeyDown}
       className={cn(
-        "touch-none cursor-pointer outline-none will-change-transform focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950",
+        "group touch-none cursor-grab outline-none will-change-transform active:cursor-grabbing focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950",
         isDragging && "opacity-30",
       )}
+      {...listeners}
+      {...draggableAttributes}
     >
-      <TaskCardPreview task={task} dragHandle={dragHandle} />
+      <TaskCardPreview task={task} dragHandle={dragIndicator} />
     </div>
   );
 }
