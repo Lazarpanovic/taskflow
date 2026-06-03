@@ -1,20 +1,41 @@
+import { DashboardStats } from "@/components/dashboard-stats";
+import { KanbanBoard } from "@/components/kanban/kanban-board";
+import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { demoTasks } from "@/data/tasks";
+
 export default function Home() {
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <section className="mx-auto flex min-h-screen max-w-7xl flex-col items-center justify-center px-6 text-center">
-        <p className="mb-4 rounded-full border border-slate-700 px-4 py-1 text-sm text-slate-300">
-          TaskFlow Dashboard
-        </p>
+    <DashboardShell>
+      <div className="mb-6 flex flex-col justify-between gap-4 xl:flex-row xl:items-end">
+        <div>
+          <p className="text-sm font-medium text-blue-400">
+            Project Management
+          </p>
 
-        <h1 className="max-w-3xl text-4xl font-bold tracking-tight sm:text-6xl">
-          Modern Kanban project management dashboard
-        </h1>
+          <h2 className="mt-2 text-2xl font-bold tracking-tight text-white sm:text-3xl">
+            Kanban Board
+          </h2>
 
-        <p className="mt-6 max-w-2xl text-base leading-7 text-slate-400 sm:text-lg">
-          Organize tasks, manage priorities, track progress, and move work
-          across a responsive drag-and-drop Kanban board.
-        </p>
-      </section>
-    </main>
+          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            Plan, prioritize, and track your work across a clean drag-and-drop
+            workflow.
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <button className="rounded-2xl border border-slate-800 bg-slate-900 px-4 py-2.5 text-sm font-medium text-slate-300 transition hover:text-white">
+            Reset demo data
+          </button>
+
+          <button className="rounded-2xl bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400">
+            Add task
+          </button>
+        </div>
+      </div>
+
+      <DashboardStats tasks={demoTasks} />
+
+      <KanbanBoard tasks={demoTasks} />
+    </DashboardShell>
   );
 }
