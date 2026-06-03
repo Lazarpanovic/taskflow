@@ -13,12 +13,12 @@ export const navigationItems = [
   },
   {
     label: "Reports",
-    href: "#",
+    href: "/reports",
     icon: BarChart3,
   },
   {
     label: "Settings",
-    href: "#",
+    href: "/settings",
     icon: Settings,
   },
 ];
