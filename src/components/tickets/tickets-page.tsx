@@ -14,37 +14,147 @@ import {
   type DragStartEvent,
 } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
-import { ArrowRightCircle } from "lucide-react";
-import { TaskCardPreview } from "@/components/tasks/task-card";
+import {
+  ArrowDownToLine,
+  ArrowUpRight,
+  CalendarDays,
+  GripVertical,
+} from "lucide-react";
 import { demoTasks } from "@/data/tasks";
 import { useLocalStorage } from "@/hooks/use-local-storage";
 import { cn } from "@/lib/utils";
-import type { Task } from "@/types";
+import { formatDate, getDueDateStatus } from "@/lib/date";
+import type { Task, TaskPriority, TaskStatus } from "@/types";
 
 const TASKS_STORAGE_KEY = "taskflow-tasks";
 
 const CURRENT_SPRINT_DROP_ZONE_ID = "current-sprint-drop-zone";
+const BACKLOG_DROP_ZONE_ID = "backlog-drop-zone";
+
+type TicketSectionVariant = "sprint" | "backlog";
 
 type TicketSectionProps = {
-  id?: string;
+  id: string;
   title: string;
   description: string;
   tasks: Task[];
-  variant: "sprint" | "backlog";
-  onMoveToSprint?: (taskId: string) => void;
+  variant: TicketSectionVariant;
+  onMoveToSprint: (taskId: string) => void;
+  onMoveToBacklog: (taskId: string) => void;
 };
 
-type DraggableTicketCardProps = {
+type TicketRowProps = {
   task: Task;
-  variant: "sprint" | "backlog";
-  onMoveToSprint?: (taskId: string) => void;
+  variant: TicketSectionVariant;
+  onMoveToSprint: (taskId: string) => void;
+  onMoveToBacklog: (taskId: string) => void;
 };
 
-function DraggableTicketCard({
+const priorityClasses: Record<TaskPriority, string> = {
+  low: "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+  medium:
+    "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  high: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-300",
+  urgent: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300",
+};
+
+const statusClasses: Record<TaskStatus, string> = {
+  backlog: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  todo: "bg-blue-500/10 text-blue-600 dark:text-blue-300",
+  "in-progress": "bg-violet-500/10 text-violet-600 dark:text-violet-300",
+  review: "bg-amber-500/10 text-amber-600 dark:text-amber-300",
+  done: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300",
+};
+
+const dueDateClasses = {
+  none: "text-slate-400 dark:text-slate-500",
+  normal: "text-slate-500 dark:text-slate-400",
+  "due-soon":
+    "rounded-full bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-300",
+  overdue:
+    "rounded-full bg-rose-500/10 px-2 py-1 text-rose-600 dark:text-rose-300",
+};
+
+function formatStatusLabel(status: TaskStatus) {
+  return status
+    .split("-")
+    .map((word) => word[0].toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
+function TicketRowPreview({ task }: { task: Task }) {
+  const dueDateStatus = getDueDateStatus(task.dueDate);
+
+  return (
+    <article className="rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm dark:border-slate-800 dark:bg-slate-950">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-sm font-semibold text-slate-950 dark:text-white">
+              {task.title}
+            </h3>
+
+            <span
+              className={cn(
+                "rounded-full px-2.5 py-1 text-[11px] font-semibold capitalize",
+                statusClasses[task.status],
+              )}
+            >
+              {formatStatusLabel(task.status)}
+            </span>
+
+            <span
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[11px] font-medium capitalize",
+                priorityClasses[task.priority],
+              )}
+            >
+              {task.priority}
+            </span>
+          </div>
+
+          <p className="mt-1 line-clamp-1 text-sm text-slate-500 dark:text-slate-400">
+            {task.description}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-3 lg:justify-end">
+          <div className="flex items-center gap-2 text-xs">
+            <CalendarDays className="size-3.5 text-slate-400 dark:text-slate-500" />
+            <span className={dueDateClasses[dueDateStatus]}>
+              {formatDate(task.dueDate)}
+            </span>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {task.labels.slice(0, 3).map((label) => (
+              <span
+                key={label.id}
+                className="rounded-full bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+              >
+                {label.name}
+              </span>
+            ))}
+          </div>
+
+          <div
+            title={task.assignee.name}
+            className="flex size-8 items-center justify-center rounded-full bg-blue-500 text-xs font-bold text-white"
+          >
+            {task.assignee.initials}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TicketRow({
   task,
   variant,
   onMoveToSprint,
-}: DraggableTicketCardProps) {
+  onMoveToBacklog,
+}: TicketRowProps) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: task.id,
@@ -52,7 +162,6 @@ function DraggableTicketCard({
         type: "ticket",
         task,
       },
-      disabled: variant !== "backlog",
     });
 
   const style = {
@@ -64,31 +173,45 @@ function DraggableTicketCard({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative",
-        variant === "backlog" && "touch-none will-change-transform",
+        "touch-none will-change-transform",
         isDragging && "opacity-30",
       )}
     >
-      <div
-        className={cn(
-          variant === "backlog" && "cursor-grab active:cursor-grabbing",
-        )}
-        {...(variant === "backlog" ? listeners : {})}
-        {...(variant === "backlog" ? attributes : {})}
-      >
-        <TaskCardPreview task={task} />
-      </div>
-
-      {variant === "backlog" && onMoveToSprint ? (
+      <div className="flex flex-col gap-2 rounded-2xl border border-transparent transition hover:border-slate-200 dark:hover:border-slate-800 sm:flex-row sm:items-center">
         <button
           type="button"
-          onClick={() => onMoveToSprint(task.id)}
-          className="mt-3 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-400"
+          className="flex shrink-0 cursor-grab items-center justify-center rounded-2xl border border-slate-200 bg-white px-3 py-3 text-slate-400 shadow-sm transition hover:text-slate-700 active:cursor-grabbing dark:border-slate-800 dark:bg-slate-950 dark:hover:text-slate-200"
+          aria-label={`Drag ${task.title}`}
+          {...listeners}
+          {...attributes}
         >
-          <ArrowRightCircle className="size-4" />
-          Move to Sprint
+          <GripVertical className="size-4" />
         </button>
-      ) : null}
+
+        <div className="min-w-0 flex-1">
+          <TicketRowPreview task={task} />
+        </div>
+
+        {variant === "backlog" ? (
+          <button
+            type="button"
+            onClick={() => onMoveToSprint(task.id)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl bg-blue-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-400"
+          >
+            <ArrowUpRight className="size-4" />
+            Sprint
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onMoveToBacklog(task.id)}
+            className="inline-flex shrink-0 items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-600 shadow-sm transition hover:text-slate-950 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-300 dark:hover:text-white"
+          >
+            <ArrowDownToLine className="size-4" />
+            Backlog
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -100,10 +223,10 @@ function TicketSection({
   tasks,
   variant,
   onMoveToSprint,
+  onMoveToBacklog,
 }: TicketSectionProps) {
   const { setNodeRef, isOver } = useDroppable({
-    id: id ?? title,
-    disabled: variant !== "sprint",
+    id,
   });
 
   return (
@@ -111,8 +234,7 @@ function TicketSection({
       ref={setNodeRef}
       className={cn(
         "rounded-3xl border border-slate-200 bg-white p-5 shadow-sm transition dark:border-slate-800 dark:bg-slate-900/70",
-        variant === "sprint" &&
-          isOver &&
+        isOver &&
           "border-blue-400 bg-blue-50 dark:border-blue-500 dark:bg-blue-950/20",
       )}
     >
@@ -131,33 +253,34 @@ function TicketSection({
         </span>
       </div>
 
-      {variant === "sprint" ? (
-        <div
-          className={cn(
-            "mb-5 rounded-3xl border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-center text-sm text-slate-500 transition dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400",
-            isOver &&
-              "border-blue-400 bg-blue-100 text-blue-700 dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-300",
-          )}
-        >
-          Drop backlog tickets here to move them into the current sprint.
-        </div>
-      ) : null}
+      <div
+        className={cn(
+          "mb-4 rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-4 text-center text-sm text-slate-500 transition dark:border-slate-800 dark:bg-slate-950/60 dark:text-slate-400",
+          isOver &&
+            "border-blue-400 bg-blue-100 text-blue-700 dark:border-blue-500 dark:bg-blue-950/30 dark:text-blue-300",
+        )}
+      >
+        {variant === "sprint"
+          ? "Drop tickets here to move them into the current sprint."
+          : "Drop tickets here to move them back to backlog."}
+      </div>
 
       {tasks.length > 0 ? (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className="space-y-3">
           {tasks.map((task) => (
-            <DraggableTicketCard
+            <TicketRow
               key={task.id}
               task={task}
               variant={variant}
               onMoveToSprint={onMoveToSprint}
+              onMoveToBacklog={onMoveToBacklog}
             />
           ))}
         </div>
       ) : (
-        <div className="flex min-h-40 items-center justify-center rounded-3xl border border-dashed border-slate-300 px-4 text-center text-sm text-slate-400 dark:border-slate-800 dark:text-slate-500">
+        <div className="flex min-h-32 items-center justify-center rounded-2xl border border-dashed border-slate-300 px-4 text-center text-sm text-slate-400 dark:border-slate-800 dark:text-slate-500">
           {variant === "sprint"
-            ? "No tickets in the current sprint yet. Drop backlog tickets here."
+            ? "No tickets in the current sprint yet."
             : "No backlog tickets right now."}
         </div>
       )}
@@ -198,6 +321,20 @@ export function TicketsPage() {
     );
   };
 
+  const moveTaskToBacklog = (taskId: string) => {
+    setTasks((currentTasks) =>
+      currentTasks.map((task) =>
+        task.id === taskId
+          ? {
+              ...task,
+              status: "backlog",
+              updatedAt: new Date().toISOString(),
+            }
+          : task,
+      ),
+    );
+  };
+
   const handleDragStart = (event: DragStartEvent) => {
     const taskId = event.active.id.toString();
     const task = tasks.find((item) => item.id === taskId);
@@ -218,18 +355,20 @@ export function TicketsPage() {
 
     const activeTaskId = active.id.toString();
     const overId = over.id.toString();
-
-    if (overId !== CURRENT_SPRINT_DROP_ZONE_ID) {
-      return;
-    }
-
     const draggedTask = tasks.find((task) => task.id === activeTaskId);
 
-    if (!draggedTask || draggedTask.status !== "backlog") {
+    if (!draggedTask) {
       return;
     }
 
-    moveTaskToSprint(activeTaskId);
+    if (overId === CURRENT_SPRINT_DROP_ZONE_ID) {
+      moveTaskToSprint(activeTaskId);
+      return;
+    }
+
+    if (overId === BACKLOG_DROP_ZONE_ID) {
+      moveTaskToBacklog(activeTaskId);
+    }
   };
 
   if (!isInitialized) {
@@ -260,8 +399,8 @@ export function TicketsPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
-            Review tickets currently planned for the sprint and keep future work
-            organized in the backlog.
+            Review active sprint tickets and move future work between the sprint
+            and backlog with drag and drop.
           </p>
         </div>
 
@@ -271,19 +410,27 @@ export function TicketsPage() {
           description="Tasks that are actively planned, in progress, in review, or completed."
           tasks={currentSprintTasks}
           variant="sprint"
+          onMoveToSprint={moveTaskToSprint}
+          onMoveToBacklog={moveTaskToBacklog}
         />
 
         <TicketSection
+          id={BACKLOG_DROP_ZONE_ID}
           title="Backlog Tickets"
           description="Ideas, requests, and future work that are not part of the active sprint yet."
           tasks={backlogTasks}
           variant="backlog"
           onMoveToSprint={moveTaskToSprint}
+          onMoveToBacklog={moveTaskToBacklog}
         />
       </div>
 
       <DragOverlay dropAnimation={null}>
-        {activeTask ? <TaskCardPreview task={activeTask} isOverlay /> : null}
+        {activeTask ? (
+          <div className="w-[min(760px,90vw)] rotate-1">
+            <TicketRowPreview task={activeTask} />
+          </div>
+        ) : null}
       </DragOverlay>
     </DndContext>
   );
