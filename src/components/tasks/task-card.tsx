@@ -6,6 +6,7 @@ import { useDraggable } from "@dnd-kit/core";
 import { CalendarDays, GripVertical } from "lucide-react";
 import type { Task, TaskPriority } from "@/types";
 import { cn } from "@/lib/utils";
+import { formatDate, getDueDateStatus } from "@/lib/date";
 
 type TaskCardProps = {
   task: Task;
@@ -24,6 +25,15 @@ const priorityClasses: Record<TaskPriority, string> = {
     "border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-300",
   high: "border-orange-500/30 bg-orange-500/10 text-orange-600 dark:text-orange-300",
   urgent: "border-rose-500/30 bg-rose-500/10 text-rose-600 dark:text-rose-300",
+};
+
+const dueDateClasses = {
+  none: "text-slate-400 dark:text-slate-500",
+  normal: "text-slate-400 dark:text-slate-500",
+  "due-soon":
+    "rounded-full bg-amber-500/10 px-2 py-1 text-amber-600 dark:text-amber-300",
+  overdue:
+    "rounded-full bg-rose-500/10 px-2 py-1 text-rose-600 dark:text-rose-300",
 };
 
 export function TaskCardPreview({
@@ -66,7 +76,9 @@ export function TaskCardPreview({
       <div className="mt-5 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           <CalendarDays className="size-3.5" />
-          <span>{task.dueDate || "No due date"}</span>
+          <span className={dueDateClasses[getDueDateStatus(task.dueDate)]}>
+            {formatDate(task.dueDate)}
+          </span>
         </div>
 
         <div className="flex items-center gap-2">
